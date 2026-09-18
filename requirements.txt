@@ -1,0 +1,5 @@
+qiskit>=1.2
+qiskit-aer>=0.15
+networkx
+pandas
+matplotlib
