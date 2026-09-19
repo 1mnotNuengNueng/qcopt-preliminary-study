@@ -143,24 +143,24 @@ This preliminary study asks: **do these findings hold at a smaller scale with a 
   <img src="results/figures/09_routing_methods.png" width="55%" alt="Routing methods comparison at opt level 1">
 </p>
 
-## Key Challenges in Quantum Circuit Optimisation
+## Key Challenges Observed
 
-This preliminary study, combined with insights from Safi et al., highlights the following **fundamental challenges** in the field:
+From this preliminary study, we can see the core problems in quantum circuit optimisation:
 
-### 1. The NISQ Fidelity Wall
-Even with the best transpiler settings, noisy simulation fidelity averages only **0.75** (vs 0.99 ideal). For circuits like QFT at ≥ 10 qubits, output is essentially random. Transpiler optimisation is **necessary but not sufficient** — error mitigation and eventually error correction are required.
+### 1. Too many 2-qubit gates → fidelity drops fast
+Every additional CX gate introduces ~1% error. When a circuit ends up with 100+ CX gates after transpilation, the probability of getting the correct answer drops below 50% (r = −0.87). This is the single biggest factor that determines whether a quantum circuit produces useful output or noise.
 
-### 2. The Routing Problem is Circuit-Dependent
-No single routing strategy is universally optimal. Circuits with local connectivity (GHZ, QAOA) are trivial to route; circuits requiring all-to-all interaction (QFT) suffer massive routing overhead. This suggests that **circuit-aware compilation** — where the transpiler adapts its strategy to the circuit's interaction graph — is crucial.
+### 2. Circuit design dictates the outcome more than the compiler
+A shallow circuit like QAOA (p=1) achieves 0.95 fidelity even at 10 qubits, while a deep circuit like QFT drops to 0.21 — near-random output. No amount of transpiler optimisation can compensate for a circuit that fundamentally requires too many long-range interactions. The structure of the algorithm itself is the dominant factor.
 
-### 3. The Topology–Noise Trade-off
-Higher connectivity reduces routing overhead but may amplify crosstalk (as shown by Safi et al.'s shared qubit model). This creates an inherent tension: **the hardware topology that minimises gate count may not minimise total error**. Resolving this requires hardware-software co-design that considers both routing and noise simultaneously.
+### 3. Routing on restricted hardware adds gates that weren't in the original circuit
+When qubits need to interact but are not physically connected, the transpiler inserts SWAP gates. On a linear topology, QFT accumulates ~28 extra 2Q gates on average; on heavy_hex, ~32. These "overhead" gates do nothing useful — they just move data around — but each one adds real error. A grid topology cuts this overhead to ~14 because it has more connections.
 
-### 4. Diminishing Returns of Classical Optimisation
-Both studies find diminishing returns at higher optimisation levels. Beyond a "good enough" configuration (L1–L2 with SABRE), further classical optimisation effort yields marginal gains. This points to a **fundamental limit** of classical compilation techniques — motivating research into quantum-aware compilation (e.g., noise-adaptive mapping, dynamic decoupling-aware scheduling).
+### 4. Better routing algorithms make a huge difference — but only when routing is hard
+SABRE and Lookahead produce ~167 CX gates for QFT, while Basic routing produces 363 — more than 2× worse. But for GHZ (which naturally fits a linear chain), all three methods give the exact same result. The lesson: routing algorithm choice matters most for circuits whose interaction pattern mismatches the hardware topology.
 
-### 5. Scalability Uncertainty
-Our results at 5–10 qubits may not extrapolate to 100+ qubits. Safi et al.'s larger-scale study suggests some findings shift (e.g., the optimal opt level). **Cross-scale validation** remains an open challenge — small-scale studies are tractable but may not capture phenomena that emerge at scale.
+### 5. Optimising harder gives diminishing returns
+Going from optimisation level 0 → 2 cuts 2Q gates by 54% and improves fidelity by +0.08. But going from level 2 → 3 gives essentially zero improvement (38.0 vs 38.1 gates). At some point, the classical compiler has done all it can — further gains require error mitigation techniques or better hardware.
 
 ## Project Structure
 
