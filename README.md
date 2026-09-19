@@ -143,24 +143,31 @@ This preliminary study **reproduces key aspects of their methodology at a reduce
   <img src="results/figures/09_routing_methods.png" width="55%" alt="Routing methods comparison at opt level 1">
 </p>
 
-## Key Challenges Observed
+## Key Observations
 
-From this preliminary study, we can see the core problems in quantum circuit optimisation:
+### 1. More 2-qubit gates lead to a rapid drop in accuracy
+CX gates in particular are important because each gate introduces an error that can accumulate throughout the circuit. When a circuit contains too many CX gates, for example, more than 100 gates, the output becomes increasingly inaccurate and noisy. Therefore, reducing the number of 2-qubit gates is one of the most important factors for improving fidelity.
 
-### 1. Too many 2-qubit gates → fidelity drops fast
-Every additional CX gate introduces ~1% error. When a circuit ends up with 100+ CX gates after transpilation, the probability of getting the correct answer drops below 50% (r = −0.87). This is the single biggest factor that determines whether a quantum circuit produces useful output or noise.
+### 2. Circuit design matters more than compiler optimisation
+Shallow circuits that require fewer interactions between qubits, such as QAOA with p=1, can maintain high fidelity even as the number of qubits increases.
 
-### 2. Circuit design dictates the outcome more than the compiler
-A shallow circuit like QAOA (p=1) achieves 0.95 fidelity even at 10 qubits, while a deep circuit like QFT drops to 0.21 — near-random output. No amount of transpiler optimisation can compensate for a circuit that fundamentally requires too many long-range interactions. The structure of the algorithm itself is the dominant factor.
+In contrast, deeper circuits such as QFT require many gates and interactions between qubits. This causes fidelity to decrease significantly, even after transpiler optimisation.
 
-### 3. Routing on restricted hardware adds gates that weren't in the original circuit
-When qubits need to interact but are not physically connected, the transpiler inserts SWAP gates. On a linear topology, QFT accumulates ~28 extra 2Q gates on average; on heavy_hex, ~32. These "overhead" gates do nothing useful — they just move data around — but each one adds real error. A grid topology cuts this overhead to ~14 because it has more connections.
+In summary, if the circuit design is inherently too complex, the compiler can only help to a limited extent.
+### 3. Unconnected qubits require additional SWAP gates
+In real quantum hardware, not every pair of qubits is directly connected. If two qubits need to interact but are physically far apart, the transpiler must insert SWAP gates to move quantum information between them.
 
-### 4. Better routing algorithms make a huge difference — but only when routing is hard
-SABRE and Lookahead produce ~167 CX gates for QFT, while Basic routing produces 363 — more than 2× worse. But for GHZ (which naturally fits a linear chain), all three methods give the exact same result. The lesson: routing algorithm choice matters most for circuits whose interaction pattern mismatches the hardware topology.
+These SWAP gates do not directly contribute to the algorithm’s computation. Instead, they increase the number of 2-qubit gates and introduce additional errors. Therefore, hardware topologies with greater connectivity, such as a grid topology, can reduce routing overhead more effectively than linear or heavy-hex topologies in some cases.
+### 4. The routing algorithm matters most for circuits with complex connectivity
+For circuits such as QFT, more advanced routing methods, such as SABRE or Lookahead, can significantly reduce the number of CX gates compared with Basic routing.
 
-### 5. Optimising harder gives diminishing returns
-Going from optimisation level 0 → 2 cuts 2Q gates by 54% and improves fidelity by +0.08. But going from level 2 → 3 gives essentially zero improvement (38.0 vs 38.1 gates). At some point, the classical compiler has done all it can — further gains require error mitigation techniques or better hardware.
+However, for simpler circuits such as GHZ, where qubits are naturally connected in a linear chain, all routing methods produce similar results.
+
+Therefore, the routing algorithm should be chosen based on the circuit’s qubit-interaction pattern.
+### 5. Higher optimisation levels do not always produce better results
+Increasing the optimisation level initially reduces the number of 2-qubit gates and improves fidelity noticeably. However, after a certain point, further optimisation produces only very small improvements.
+
+This shows that compiler optimisation has limitations. To improve accuracy further, it may be necessary to redesign the circuit, apply error-mitigation techniques, or use higher-quality quantum hardware.
 
 ## Project Structure
 
