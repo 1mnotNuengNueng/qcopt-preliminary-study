@@ -14,7 +14,7 @@ Safi et al. demonstrate that quantum circuit performance depends on the interpla
 4. **Back-end size scaling** offers limited benefit — topology structure matters more than qubit count.
 5. Circuit performance is **highly benchmark-specific**.
 
-This preliminary study asks: **do these findings hold at a smaller scale with a simpler noise model?**
+This preliminary study **reproduces key aspects of their methodology at a reduced scale** to build foundational understanding of how transpiler settings, hardware topology, and circuit structure interact in quantum circuit optimisation.
 
 ## Experimental Settings
 
@@ -185,8 +185,8 @@ qcopt-preliminary-study/
 ```bash
 pip install -r requirements.txt
 cd src
-python experiment.py      # ~5–10 min, outputs to results/
-python plots.py           # generates figures
+python experiment.py      
+python plots.py           
 ```
 
 ## Reference
